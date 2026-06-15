@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cutout CSS Test</title>
+  <style>
+    body {
+      background-color: #171717;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: sans-serif;
+    }
+    
+    .sidebar-card {
+      background-color: #ffffff;
+      border-radius: 28px;
+      width: 240px;
+      padding: 32px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    
+    .avatar {
+      width: 60px;
+      height: 60px;
+      background-color: #000000;
+      border-radius: 50%;
+      margin-bottom: 30px;
+    }
+    
+    .nav-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    
+    .nav-item {
+      width: 100%;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      color: #8B1A1A; /* dark red from image */
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      text-decoration: none;
+      box-sizing: border-box;
+      position: relative;
+      background: transparent;
+      border: none;
+      transition: color 0.2s ease;
+    }
+    
+    .nav-item.active {
+      background-color: #171717; /* matches outer background */
+      color: #ffffff;
+    }
+    
+    /* Top Left Cutout Curve */
+    .nav-item.active::before {
+      content: "";
+      position: absolute;
+      top: -20px;
+      left: 0;
+      width: 20px;
+      height: 20px;
+      background-color: transparent;
+      border-bottom-left-radius: 20px;
+      box-shadow: -10px 10px 0 0 #171717;
+      pointer-events: none;
+    }
+    
+    /* Bottom Left Cutout Curve */
+    .nav-item.active::after {
+      content: "";
+      position: absolute;
+      bottom: -20px;
+      left: 0;
+      width: 20px;
+      height: 20px;
+      background-color: transparent;
+      border-top-left-radius: 20px;
+      box-shadow: -10px -10px 0 0 #171717;
+      pointer-events: none;
+    }
+    
+    /* Top Right Cutout Curve (we need another pseudo-element or separate classes) */
+    /* To handle both sides, let's add helper elements or use child containers */
+    .nav-item.active .right-curve-top {
+      content: "";
+      position: absolute;
+      top: -20px;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      background-color: transparent;
+      border-bottom-right-radius: 20px;
+      box-shadow: 10px 10px 0 0 #171717;
+      pointer-events: none;
+    }
+    
+    .nav-item.active .right-curve-bottom {
+      content: "";
+      position: absolute;
+      bottom: -20px;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      background-color: transparent;
+      border-top-right-radius: 20px;
+      box-shadow: 10px -10px 0 0 #171717;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar-card">
+    <div class="avatar"></div>
+    <div class="nav-list">
+      <a href="#" class="nav-item">Profile</a>
+      <a href="#" class="nav-item">Search</a>
+      <a href="#" class="nav-item active">
+        New Post
+        <span class="right-curve-top"></span>
+        <span class="right-curve-bottom"></span>
+      </a>
+      <a href="#" class="nav-item">Activity</a>
+      <a href="#" class="nav-item">Messages</a>
+      <a href="#" class="nav-item">Settings</a>
+      <a href="#" class="nav-item">Support</a>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { agentAPI, userAPI } from '../../services/api';
+import { useNotification } from '../../context/NotificationContext';
 import {
   Box,
   Typography,
@@ -21,12 +22,11 @@ import {
   Alert,
   IconButton,
   CircularProgress,
+  InputAdornment,
+  TablePagination
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import { UserPlus, Search, Edit2, Trash2, Filter } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const DEPARTMENTS = [
   { id: 1, name: 'IT Helpdesk' },
@@ -40,6 +40,13 @@ const ManageAgents = () => {
   const [eligibleUsers, setEligibleUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { showNotification } = useNotification();
+
+  // Search & Filter & Pagination States
+  const [searchTerm, setSearchTerm] = useState('');
+  const [deptFilter, setDeptFilter] = useState('ALL');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Dialog State
   const [openDialog, setOpenDialog] = useState(false);
@@ -52,18 +59,14 @@ const ManageAgents = () => {
   const [workload, setWorkload] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+
 
   const loadData = async () => {
     try {
       setLoading(true);
-      // Fetch agents
       const agentsRes = await agentAPI.getAgents();
       setAgents(agentsRes.data);
 
-      // Fetch all users to filter out eligible ones (AGENT or TEAM_LEAD roles who aren't already agents)
       const usersRes = await userAPI.getUsers();
       const allUsers = usersRes.data;
       const currentAgentUserIds = agentsRes.data.map(a => a.userId);
@@ -78,9 +81,14 @@ const ManageAgents = () => {
     } catch (err) {
       console.error(err);
       setError('Failed to load agents information');
+      showNotification('Could not read agent directory from database', 'error');
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleOpenAdd = () => {
     setIsEdit(false);
@@ -117,11 +125,13 @@ const ManageAgents = () => {
           deptId: parseInt(deptId),
           workload: parseInt(workload)
         });
+        showNotification('Agent settings updated.', 'success');
       } else {
         await agentAPI.addAgent({
           userId: parseInt(selectedUserId),
           deptId: parseInt(deptId)
         });
+        showNotification('Support agent registered successfully!', 'success');
       }
       setSubmitting(false);
       setOpenDialog(false);
@@ -134,13 +144,14 @@ const ManageAgents = () => {
   };
 
   const handleDelete = async (agentId) => {
-    if (window.confirm('Are you sure you want to delete this agent? This removes their agent registry status (the user account will still exist).')) {
+    if (window.confirm('Are you sure you want to remove this support agent registration? (The user account itself will remain active)')) {
       try {
         await agentAPI.deleteAgent(agentId);
+        showNotification('Support agent registration removed.', 'info');
         loadData();
       } catch (err) {
         console.error(err);
-        alert('Failed to delete agent');
+        showNotification('Failed to remove support agent', 'error');
       }
     }
   };
@@ -150,95 +161,204 @@ const ManageAgents = () => {
     return dept ? dept.name : `Dept ${id}`;
   };
 
+  // Filters & Search logic
+  const filteredAgents = agents.filter((a) => {
+    const matchesSearch =
+      a.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      a.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getDeptName(a.deptId).toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDept = deptFilter === 'ALL' || a.deptId === parseInt(deptFilter);
+    return matchesSearch && matchesDept;
+  });
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          Support Agent Registry
-        </Typography>
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 0.5, color: 'var(--text-primary)' }}>
+            Support Agent Registry
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
+            View active support specialists, workloads, and department allocations.
+          </Typography>
+        </Box>
         <Button
           variant="contained"
-          startIcon={<AddIcon />}
+          startIcon={<UserPlus size={18} />}
           onClick={handleOpenAdd}
-          sx={{ textTransform: 'none', fontWeight: 'bold' }}
+          sx={{ fontWeight: 700, borderRadius: '8px' }}
         >
           Register Agent
         </Button>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '10px' }}>{error}</Alert>}
 
-      <TableContainer component={Paper} sx={{ boxShadow: 2 }}>
+      {/* Search and Filters Block */}
+      <Paper sx={{ p: 2.5, mb: 3, borderRadius: '12px', border: '1px solid', borderColor: 'divider', display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+        <TextField
+          placeholder="Search by agent name, email, department..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{ flexGrow: 1, minWidth: '250px' }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search size={16} color="#94A3B8" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        <TextField
+          select
+          value={deptFilter}
+          onChange={(e) => setDeptFilter(e.target.value)}
+          label="Filter by Department"
+          sx={{ width: 220 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Filter size={16} color="#94A3B8" />
+              </InputAdornment>
+            ),
+          }}
+        >
+          <MenuItem value="ALL">All Departments</MenuItem>
+          {DEPARTMENTS.map((dept) => (
+            <MenuItem key={dept.id} value={String(dept.id)}>
+              {dept.name}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Paper>
+
+      {/* Agents Table */}
+      <TableContainer className="modern-table-container">
         <Table>
-          <TableHead sx={{ bgcolor: '#f5f5f5' }}>
+          <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Agent ID</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Full Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Department</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Active Workload</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }} align="center">Actions</TableCell>
+              <TableCell>Agent ID</TableCell>
+              <TableCell>Full Name</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Department</TableCell>
+              <TableCell>Active Workload</TableCell>
+              <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {agents.map((agent) => (
+            {filteredAgents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((agent) => (
               <TableRow key={agent.agentId} hover>
-                <TableCell>{agent.agentId}</TableCell>
-                <TableCell sx={{ fontWeight: 'medium' }}>{agent.fullName}</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>#{agent.agentId}</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>{agent.fullName}</TableCell>
                 <TableCell>{agent.email}</TableCell>
                 <TableCell>{getDeptName(agent.deptId)}</TableCell>
                 <TableCell>
                   <Chip
-                    label={`${agent.workload} requests`}
+                    label={`${agent.workload || 0} active tickets`}
                     size="small"
-                    color={agent.workload > 3 ? 'warning' : 'default'}
+                    sx={{
+                      backgroundColor: agent.workload > 3 ? '#F59E0B15' : '#16A34A15',
+                      color: agent.workload > 3 ? '#F59E0B' : '#16A34A',
+                      fontWeight: 700,
+                      borderRadius: '6px'
+                    }}
                   />
                 </TableCell>
                 <TableCell align="center">
-                  <IconButton color="primary" onClick={() => handleOpenEdit(agent)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton color="error" onClick={() => handleDelete(agent.agentId)}>
-                    <DeleteIcon />
-                  </IconButton>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleOpenEdit(agent)}
+                      sx={{
+                        p: 1,
+                        backgroundColor: 'action.hover',
+                        borderRadius: '8px',
+                        '&:hover': { color: 'primary.main' }
+                      }}
+                    >
+                      <Edit2 size={16} />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDelete(agent.agentId)}
+                      sx={{
+                        p: 1,
+                        backgroundColor: 'action.hover',
+                        borderRadius: '8px',
+                        '&:hover': { color: 'error.main' }
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </IconButton>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
+            {filteredAgents.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No registered agents match your criteria.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={filteredAgents.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
       </TableContainer>
 
       {/* Add/Edit Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ fontWeight: 'bold' }}>
+        <DialogTitle sx={{ fontWeight: 800 }}>
           {isEdit ? 'Modify Agent Department' : 'Register New Support Agent'}
         </DialogTitle>
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ py: 3 }}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <Box component="form" onSubmit={handleSave}>
+          <Box component="form" onSubmit={handleSave} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {isEdit ? (
               <TextField
-                margin="normal"
                 fullWidth
                 disabled
                 label="Selected Agent User ID"
                 value={selectedUserId}
               />
             ) : eligibleUsers.length === 0 ? (
-              <Alert severity="info" sx={{ my: 1 }}>
+              <Alert severity="info" sx={{ my: 1, borderRadius: '8px' }}>
                 All user accounts with AGENT or TEAM_LEAD roles are already registered.
               </Alert>
             ) : (
               <TextField
-                margin="normal"
                 required
                 select
                 fullWidth
@@ -255,7 +375,6 @@ const ManageAgents = () => {
             )}
 
             <TextField
-              margin="normal"
               required
               select
               fullWidth
@@ -272,7 +391,6 @@ const ManageAgents = () => {
 
             {isEdit && (
               <TextField
-                margin="normal"
                 required
                 type="number"
                 fullWidth
@@ -283,7 +401,7 @@ const ManageAgents = () => {
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
           <Button
             variant="contained"
@@ -294,8 +412,9 @@ const ManageAgents = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </motion.div>
   );
 };
 
 export default ManageAgents;
+

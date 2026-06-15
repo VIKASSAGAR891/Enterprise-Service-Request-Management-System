@@ -1,12 +1,16 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeToggleProvider } from './context/ThemeContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 // Layout
 import DashboardLayout from './layouts/DashboardLayout';
 
 // Public Pages
 import Login from './pages/Login';
+
+// Settings Page
+import Settings from './pages/Settings';
 
 // Employee Pages
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
@@ -34,6 +38,9 @@ const AppRoutes = () => {
 
       {/* Authenticated Dashboard Routes */}
       <Route element={<DashboardLayout />}>
+        {/* Unified Settings Route */}
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
         {/* Employee Routes */}
         <Route path="/employee-dashboard" element={<ProtectedRoute allowedRoles={['EMPLOYEE']}><EmployeeDashboard /></ProtectedRoute>} />
         <Route path="/create-request" element={<ProtectedRoute allowedRoles={['EMPLOYEE']}><CreateRequest /></ProtectedRoute>} />
@@ -87,10 +94,15 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <ThemeToggleProvider>
+          <NotificationProvider>
+            <AppRoutes />
+          </NotificationProvider>
+        </ThemeToggleProvider>
       </AuthProvider>
     </Router>
   );
 }
 
 export default App;
+

@@ -1,51 +1,43 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useContext } from 'react';
 import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Load persisted session
-    const storedUser = localStorage.getItem('esrms_user');
+  const [user, setUser] = useState(() => {
+    const storedUser = sessionStorage.getItem('esrms_user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.removeItem('esrms_user');
+        return JSON.parse(storedUser);
+      } catch {
+        sessionStorage.removeItem('esrms_user');
       }
     }
-    setLoading(false);
-  }, []);
+    return null;
+  });
 
   const login = async (email, password) => {
-    try {
-      const response = await authAPI.login(email, password);
-      const userData = response.data;
-      setUser(userData);
-      localStorage.setItem('esrms_user', JSON.stringify(userData));
-      return userData;
-    } catch (error) {
-      throw error;
-    }
+    const response = await authAPI.login(email, password);
+    const userData = response.data;
+    setUser(userData);
+    sessionStorage.setItem('esrms_user', JSON.stringify(userData));
+    return userData;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('esrms_user');
+    sessionStorage.removeItem('esrms_user');
   };
 
   const value = {
     user,
     login,
     logout,
-    loading,
+    loading: false,
     isAuthenticated: !!user,
   };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

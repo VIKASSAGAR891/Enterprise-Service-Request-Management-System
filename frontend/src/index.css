@@ -1,27 +1,361 @@
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
-  background-color: #f4f6f8;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+body.light {
+  --bg-color: #F9FAFB;
+  --card-bg: #ffffff;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --border-color: #ECECEC;
+  --accent-color: #4F46E5;
+  --sidebar-bg: #09090B;          /* Deep dark container */
+  --sidebar-card-bg: #ffffff;     /* White card background */
+  --sidebar-item-color: #71717A;  /* Mid-grey text for readability */
+  --sidebar-item-hover: #18181B;  /* Dark text on hover */
+  --sidebar-text-primary: #111827; /* Persistent dark text for logo header */
+  --sidebar-text-secondary: #6B7280; /* Persistent grey subtitle */
 }
 
-/* Custom scrollbars for a premium look */
+body.dark {
+  --bg-color: #09090B;            /* Locked to Zinc-950 */
+  --card-bg: #18181B;
+  --text-primary: #F3F4F6;
+  --text-secondary: #9CA3AF;
+  --border-color: #262626;
+  --accent-color: #6366F1;
+  --sidebar-bg: #09090B;          /* Deep dark container (stays same) */
+  --sidebar-card-bg: #ffffff;     /* Locked to white card background */
+  --sidebar-item-color: #71717A;  /* Locked to mid-grey text */
+  --sidebar-item-hover: #18181B;  /* Locked to dark hover text */
+  --sidebar-text-primary: #111827; /* Persistent dark text for logo header */
+  --sidebar-text-secondary: #6B7280; /* Persistent grey subtitle */
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+}
+
+/* Custom premium scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
+}
+
+body.light ::-webkit-scrollbar-track {
+  background: #F3F4F6;
+}
+
+body.dark ::-webkit-scrollbar-track {
+  background: #111111;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
+  border-radius: 9999px;
+  background: #D1D5DB;
+  border: 1px solid transparent;
+}
+
+body.dark ::-webkit-scrollbar-thumb {
+  background: #374151;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #999;
+  background: #9CA3AF;
 }
+
+body.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4B5563;
+}
+
+/* Custom navigation card capsule */
+.sidebar-card {
+  background-color: var(--sidebar-card-bg);
+  border-radius: 0;
+  margin: 0;
+  padding: 32px 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.nav-list {
+  width: 100%;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.nav-item {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 12px;
+  color: var(--sidebar-item-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-sizing: border-box;
+  position: relative;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.nav-item:hover {
+  color: var(--sidebar-item-hover);
+}
+
+.nav-item.active {
+  background-color: var(--sidebar-bg) !important; /* Always dark to match layout container */
+  color: #ffffff !important;
+}
+
+
+/* Modern flat table styles */
+.modern-table-container {
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  background-color: var(--card-bg) !important;
+}
+
+/* Smooth page fade transition utility */
+.page-fade-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-fade-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+/* Recharts customization */
+.recharts-default-tooltip {
+  border-radius: 8px !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+  background-color: var(--card-bg) !important;
+}
+
+/* MUI Customizations */
+.MuiButton-root {
+  text-transform: none !important;
+}
+
+/* Ensure that all text inside cards, tables, dialogs, and popovers is dark and readable in light mode */
+body.light .MuiCard-root,
+body.light .MuiTableContainer-root,
+body.light .MuiDialog-paper,
+body.light .MuiMenu-paper,
+body.light .MuiPopover-paper {
+  color: #111827 !important;
+  border-color: #ECECEC !important;
+}
+
+body.light .MuiCard-root .MuiTypography-root:not(.nav-item),
+body.light .MuiTableContainer-root .MuiTypography-root,
+body.light .MuiDialog-paper .MuiTypography-root {
+  color: #111827 !important;
+}
+
+body.light .MuiCard-root .MuiTypography-colorTextSecondary,
+body.light .MuiCard-root .MuiTypography-secondary,
+body.light .MuiCard-root .MuiTypography-root[color="text.secondary"],
+body.light .MuiCard-root .MuiTypography-root[color="textSecondary"],
+body.light .MuiCard-root .MuiTypography-root[color="secondary"] {
+  color: #6B7280 !important;
+}
+
+body.light .MuiTableCell-root {
+  color: #111827 !important;
+}
+
+body.light .MuiTableHead-root .MuiTableCell-root {
+  color: #6B7280 !important;
+}
+
+body.light .MuiOutlinedInput-root {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
+
+body.light .MuiInputLabel-root {
+  color: #6B7280 !important;
+}
+
+body.light .MuiMenuItem-root {
+  color: #111827 !important;
+}
+
+/* Uiverse.io Card Redesign Integration */
+.uiverse-card {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  perspective: 1000px;
+  border: 1px solid var(--border-color);
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+body.light .uiverse-card {
+  background-color: #ffffff;
+}
+
+body.dark .uiverse-card {
+  background-color: #18181B;
+}
+
+.uiverse-card .card__front {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.uiverse-card svg {
+  width: 42px;
+  height: 42px;
+  fill: currentColor;
+  color: var(--accent-color);
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.uiverse-card:hover {
+  transform: scale(1.03);
+  border-color: var(--accent-color);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+}
+
+.uiverse-card:hover .card__front {
+  transform: scale(0);
+  opacity: 0;
+}
+
+.uiverse-card .card__content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: var(--card-bg);
+  transform: rotateX(-90deg);
+  transform-origin: bottom;
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+body.light .uiverse-card .card__content {
+  background-color: #ffffff;
+}
+
+body.dark .uiverse-card .card__content {
+  background-color: #18181B;
+}
+
+.uiverse-card:hover .card__content {
+  transform: rotateX(0deg);
+}
+
+.uiverse-card .card__title {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+body.light .uiverse-card .card__title {
+  color: #6B7280 !important;
+}
+
+body.light .uiverse-card .card__description {
+  color: #4B5563 !important;
+}
+
+.uiverse-card .card__value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 4px 0;
+  letter-spacing: -0.02em;
+}
+
+body.light .uiverse-card .card__value {
+  color: #111827 !important;
+}
+
+.uiverse-card .card__description {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.uiverse-card .card__front-title {
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+body.light .uiverse-card .card__front-title {
+  color: #6B7280 !important;
+}
+
+.uiverse-card .card__front-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+body.light .uiverse-card .card__front-value {
+  color: #111827 !important;
+}
+
+

@@ -1,39 +1,32 @@
-import React from 'react';
+import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useThemeToggle } from '../context/ThemeContext';
+import { Box, AppBar, Toolbar, Typography, Button, IconButton, Avatar, Chip, Tooltip, Divider } from '@mui/material';
 import {
-  Box,
-  Drawer,
-  AppBar,
-  CssBaseline,
-  Toolbar,
-  List,
-  Typography,
-  Divider,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Button,
-} from '@mui/material';
-import {
-  Dashboard as DashboardIcon,
-  AddCircle as AddCircleIcon,
-  ListAlt as ListAltIcon,
-  People as PeopleIcon,
-  SupportAgent as AgentIcon,
-  Devices as AssetIcon,
-  Assessment as ReportIcon,
-  AssignmentTurnedIn as AssignmentIcon,
-  Logout as LogoutIcon,
-} from '@mui/icons-material';
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  Laptop,
+  ClipboardList,
+  BarChart3,
+  Settings,
+  LogOut,
+  Sun,
+  Moon,
+  Menu,
+  X
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const drawerWidth = 240;
+const drawerWidth = 260;
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
+  const { mode, toggleTheme } = useThemeToggle();
   const navigate = useNavigate();
   const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   if (!user) {
     navigate('/login');
@@ -45,108 +38,313 @@ const DashboardLayout = () => {
     navigate('/login');
   };
 
-  // Define navigation items based on role
   const getNavItems = () => {
     const role = user.role ? user.role.toUpperCase() : '';
     if (role === 'ADMIN') {
       return [
-        { text: 'Dashboard', icon: <DashboardIcon />, path: '/admin-dashboard' },
-        { text: 'Manage Users', icon: <PeopleIcon />, path: '/admin/users' },
-        { text: 'Manage Agents', icon: <AgentIcon />, path: '/admin/agents' },
-        { text: 'Manage Assets', icon: <AssetIcon />, path: '/admin/assets' },
-        { text: 'View Requests', icon: <ListAltIcon />, path: '/admin/requests' },
-        { text: 'Reports', icon: <ReportIcon />, path: '/admin/reports' },
+        { text: 'Dashboard', icon: <LayoutDashboard size={18} strokeWidth={1.5} />, path: '/admin-dashboard' },
+        { text: 'Manage Users', icon: <Users size={18} strokeWidth={1.5} />, path: '/admin/users' },
+        { text: 'Manage Agents', icon: <Briefcase size={18} strokeWidth={1.5} />, path: '/admin/agents' },
+        { text: 'Manage Assets', icon: <Laptop size={18} strokeWidth={1.5} />, path: '/admin/assets' },
+        { text: 'Service Requests', icon: <ClipboardList size={18} strokeWidth={1.5} />, path: '/admin/requests' },
+        { text: 'Reports', icon: <BarChart3 size={18} strokeWidth={1.5} />, path: '/admin/reports' },
+        { text: 'Settings', icon: <Settings size={18} strokeWidth={1.5} />, path: '/settings' },
       ];
     } else if (role === 'AGENT' || role === 'TEAM_LEAD') {
       return [
-        { text: 'Assigned Requests', icon: <AssignmentIcon />, path: '/agent-dashboard' },
+        { text: 'Assigned Requests', icon: <ClipboardList size={18} strokeWidth={1.5} />, path: '/agent-dashboard' },
+        { text: 'Settings', icon: <Settings size={18} strokeWidth={1.5} />, path: '/settings' },
       ];
     } else {
       // EMPLOYEE
       return [
-        { text: 'Dashboard', icon: <DashboardIcon />, path: '/employee-dashboard' },
-        { text: 'Create Request', icon: <AddCircleIcon />, path: '/create-request' },
-        { text: 'My Requests', icon: <ListAltIcon />, path: '/my-requests' },
+        { text: 'Dashboard', icon: <LayoutDashboard size={18} strokeWidth={1.5} />, path: '/employee-dashboard' },
+        { text: 'Create Request', icon: <ClipboardList size={18} strokeWidth={1.5} />, path: '/create-request' },
+        { text: 'Settings', icon: <Settings size={18} strokeWidth={1.5} />, path: '/settings' },
       ];
     }
   };
 
   const menuItems = getNavItems();
 
-  return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f4f6f8' }}>
-      <CssBaseline />
-      
-      {/* Top Navbar */}
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, bgcolor: '#1976d2' }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold', letterSpacing: 0.5 }}>
-            Enterprise Service Request Management System (ESRMS)
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="body2" sx={{ bgcolor: 'rgba(255,255,255,0.15)', px: 1.5, py: 0.5, borderRadius: 1 }}>
-              {user.role}
-            </Typography>
-            <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-              {user.fullName}
-            </Typography>
-            <Button
-              color="inherit"
-              startIcon={<LogoutIcon />}
-              onClick={handleLogout}
-              sx={{ ml: 1, textTransform: 'none' }}
-            >
-              Logout
-            </Button>
-          </Box>
-        </Toolbar>
-      </AppBar>
+  const getPageTitle = () => {
+    const activeItem = menuItems.find(item => item.path === location.pathname);
+    if (activeItem) return activeItem.text;
+    if (location.pathname.startsWith('/track-request/')) return 'Track Service Request';
+    return 'ESRMS Console';
+  };
 
-      {/* Sidebar Navigation */}
-      <Drawer
-        variant="permanent"
+  const getRoleColor = (role) => {
+    switch (role?.toUpperCase()) {
+      case 'ADMIN': return '#DC2626';
+      case 'AGENT': return '#0D9488';
+      case 'TEAM_LEAD': return '#D97706';
+      default: return '#8B80F9';
+    }
+  };
+
+  const sidebarContent = (
+    <Box className="sidebar-card">
+      {/* Header/Logo */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
+        <Box
+          sx={{
+            width: 48,
+            height: 48,
+            borderRadius: '50%',
+            backgroundColor: '#111827',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            fontWeight: 800,
+            fontSize: '1.125rem',
+            mb: 1.5,
+            border: '2px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          ES
+        </Box>
+        <Typography variant="subtitle2" sx={{ color: 'var(--sidebar-text-primary)', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.8125rem' }}>
+          ESRMS Console
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'var(--sidebar-text-secondary)', fontSize: '0.6875rem' }}>
+          Enterprise IT Portal
+        </Typography>
+      </Box>
+
+      {/* Navigation List */}
+      <nav className="nav-list">
+        {menuItems.map((item) => {
+          const isSelected = location.pathname === item.path;
+          return (
+            <button
+              key={item.text}
+              onClick={() => {
+                navigate(item.path);
+                setMobileOpen(false);
+              }}
+              className={`nav-item ${isSelected ? 'active' : ''}`}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', opacity: isSelected ? 1 : 0.7 }}>
+                {item.icon}
+              </Box>
+              <span>{item.text}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </Box>
+  );
+
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: 'background.default' }}>
+      
+      {/* Sidebar - Desktop */}
+      <Box
+        component="nav"
         sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box', borderRight: '1px solid #e0e0e0' },
+          width: { md: drawerWidth },
+          flexShrink: { md: 0 },
+          display: { xs: 'none', md: 'block' },
         }}
       >
-        <Toolbar />
-        <Box sx={{ overflow: 'auto', mt: 2 }}>
-          <List>
-            {menuItems.map((item) => {
-              const isSelected = location.pathname === item.path;
-              return (
-                <ListItem key={item.text} disablePadding>
-                  <ListItemButton
-                    onClick={() => navigate(item.path)}
-                    selected={isSelected}
-                    sx={{
-                      mx: 1,
-                      borderRadius: 1,
-                      mb: 0.5,
-                      '&.Mui-selected': {
-                        bgcolor: 'rgba(25, 118, 210, 0.08)',
-                        color: '#1976d2',
-                        '& .MuiListItemIcon-root': { color: '#1976d2' },
-                        '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.12)' },
-                      },
-                    }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-                    <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: isSelected ? 'bold' : 'regular' }} />
-                  </ListItemButton>
-                </ListItem>
-              );
-            })}
-          </List>
+        <Box
+          sx={{
+            width: drawerWidth,
+            height: '100vh',
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            zIndex: 1200,
+            backgroundColor: 'var(--sidebar-bg)',
+            borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+            transition: 'background-color 0.15s ease',
+          }}
+        >
+          {sidebarContent}
         </Box>
-      </Drawer>
+      </Box>
+
+      {/* Sidebar - Mobile Drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <Box
+            sx={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1300,
+              display: { xs: 'block', md: 'none' },
+            }}
+          >
+            {/* Backdrop */}
+            <Box
+              component={motion.div}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileOpen(false)}
+              sx={{ position: 'absolute', inset: 0, backgroundColor: 'black' }}
+            />
+            {/* Drawer */}
+            <Box
+              component={motion.div}
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.2 }}
+              sx={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 280,
+                backgroundColor: 'var(--sidebar-bg)',
+                boxShadow: '4px 0 25px rgba(0,0,0,0.3)',
+              }}
+            >
+              {sidebarContent}
+            </Box>
+          </Box>
+        )}
+      </AnimatePresence>
 
       {/* Main Content Area */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}>
-        <Toolbar />
-        <Box sx={{ mt: 1 }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          paddingLeft: { md: 0 },
+        }}
+      >
+        {/* Sticky Top Navbar */}
+        <AppBar
+          position="sticky"
+          elevation={0}
+          sx={{
+            zIndex: 1100,
+            backgroundColor: mode === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(9, 9, 11, 0.8)', // Dynamic theme blur background
+            backdropFilter: 'blur(12px)',
+            borderBottom: '1px solid var(--border-color)',
+            color: 'var(--text-primary)',
+            width: '100%',
+          }}
+        >
+          <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, sm: 3 }, height: 70 }}>
+            {/* Left: Mobile Toggle & Page Title */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconButton
+                color="inherit"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                sx={{ display: { md: 'none' } }}
+              >
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+              </IconButton>
+              <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+                {getPageTitle()}
+              </Typography>
+            </Box>
+
+            {/* Right: Actions, Theme, Logout */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2.5 } }}>
+              {/* User Profile Info */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                <Avatar
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                    backgroundColor: getRoleColor(user.role),
+                    color: 'white',
+                  }}
+                >
+                  {user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
+                </Avatar>
+                <Box sx={{ display: { xs: 'none', md: 'block' }, textAlign: 'left' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2, color: 'var(--text-primary)' }}>
+                    {user.fullName}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>
+                    {user.email}
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Chip
+                label={user.role}
+                size="small"
+                sx={{
+                  backgroundColor: `${getRoleColor(user.role)}15`,
+                  color: getRoleColor(user.role),
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  px: 0.5,
+                  display: { xs: 'none', sm: 'inline-flex' },
+                }}
+              />
+              
+              {/* Theme Toggle Button */}
+              <Tooltip title={`Switch to ${mode === 'light' ? 'Dark' : 'Light'} Mode`}>
+                <IconButton
+                  onClick={toggleTheme}
+                  sx={{
+                    color: 'var(--text-secondary)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    '&:hover': {
+                      color: 'var(--text-primary)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    },
+                  }}
+                >
+                  {mode === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+                </IconButton>
+              </Tooltip>
+
+              <Divider orientation="vertical" flexItem sx={{ height: 24, alignSelf: 'center', borderColor: 'var(--border-color)' }} />
+
+              {/* Logout Button */}
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<LogOut size={16} />}
+                onClick={handleLogout}
+                sx={{
+                  fontWeight: 600,
+                  px: 2,
+                  py: 0.75,
+                  borderRadius: '8px',
+                  borderWidth: '1px',
+                  borderColor: (theme) => `${theme.palette.error.main}40`,
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderWidth: '1px',
+                    borderColor: 'error.main',
+                    backgroundColor: 'error.main',
+                    color: '#FFFFFF',
+                  },
+                }}
+              >
+                Logout
+              </Button>
+            </Box>
+          </Toolbar>
+        </AppBar>
+
+        {/* Content Wrapper */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: { xs: 2.5, sm: 4 },
+            maxWidth: '1440px',
+            width: '100%',
+            mx: 'auto',
+          }}
+        >
           <Outlet />
         </Box>
       </Box>
@@ -155,3 +353,4 @@ const DashboardLayout = () => {
 };
 
 export default DashboardLayout;
+

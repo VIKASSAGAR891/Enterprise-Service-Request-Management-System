@@ -1,0 +1,19 @@
+# Navigate to the backend directory
+cd application/esrms
+
+
+mvn clean compile
+
+mvn exec:java "-Dexec.mainClass=com.esrms.App"
+
+
+# Navigate to the frontend directory
+cd frontend
+
+
+# Install node dependencies (run this once on initial setup)
+npm install
+
+# Start the Vite React development server
+npm run dev
+
