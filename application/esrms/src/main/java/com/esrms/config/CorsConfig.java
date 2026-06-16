@@ -15,15 +15,29 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
+        
+        // Support credentials
         config.setAllowCredentials(true);
+        
+        // Allowed origins / origin patterns
         String allowedOriginsEnv = System.getenv("ALLOWED_ORIGINS");
         if (allowedOriginsEnv != null && !allowedOriginsEnv.isEmpty()) {
-            config.setAllowedOrigins(List.of(allowedOriginsEnv.split(",")));
+            config.setAllowedOriginPatterns(List.of(allowedOriginsEnv.split(",")));
         } else {
-            config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
+            config.setAllowedOriginPatterns(List.of(
+                "http://localhost:5173", 
+                "http://localhost:3000", 
+                "https://enterprise-service-request-management-system-lf9e-o2h1fxr9j.vercel.app",
+                "https://*.vercel.app"
+            ));
         }
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
+        
+        // Allow specific headers
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        
+        // Allow specific methods
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
