@@ -36,34 +36,73 @@ public class UserDAO {
      * @return User object if authentication successful, null otherwise
      */
     public User login(String email, String password) {
+        System.out.println("=================================================");
+        System.out.println("[AUTH DEBUG] Incoming login request");
+        System.out.println("[AUTH DEBUG] Incoming email: " + email);
+        System.out.println("[AUTH DEBUG] Database URL actually used in production: " + DBConnection.getUrlForDebug());
 
         User user = null;
-
         String sql = """
                 SELECT *
                 FROM users
                 WHERE email = ?
-                AND password_hash = ?
                 """;
 
         try (
                 Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)
+                PreparedStatement ps = (conn == null) ? null : conn.prepareStatement(sql)
         ) {
+            if (conn == null || ps == null) {
+                System.out.println("[AUTH DEBUG] Connection is NULL! Production database connection failed.");
+                System.out.println("[AUTH DEBUG] Exact reason authentication fails: Unable to connect to the MySQL database.");
+                System.out.println("=================================================");
+                throw new RuntimeException("Database connection failed");
+            }
 
             ps.setString(1, email);
-            ps.setString(2, password);
-
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                user = mapResultSetToUser(rs);
+                System.out.println("[AUTH DEBUG] User is found: Yes");
+                System.out.println("[AUTH DEBUG] User ID: " + rs.getInt("user_id"));
+                System.out.println("[AUTH DEBUG] Full Name: " + rs.getString("full_name"));
+                System.out.println("[AUTH DEBUG] Role: " + rs.getString("role"));
+
+                String dbPasswordHash = rs.getString("password_hash");
+                boolean isBcrypt = dbPasswordHash != null && (dbPasswordHash.startsWith("$2a$") || dbPasswordHash.startsWith("$2b$") || dbPasswordHash.startsWith("$2y$"));
+                
+                System.out.println("[AUTH DEBUG] Stored password format: " + (isBcrypt ? "BCrypt hash" : "Plain text"));
+                System.out.println("[AUTH DEBUG] Database password: " + dbPasswordHash);
+                System.out.println("[AUTH DEBUG] Input password: " + password);
+                
+                System.out.println("[AUTH DEBUG] Password Encoder matches() check: No password encoder dependency (such as BCryptPasswordEncoder) is configured in backend pom.xml. Performing plaintext comparison.");
+                
+                boolean matches = dbPasswordHash != null && dbPasswordHash.equals(password);
+                System.out.println("[AUTH DEBUG] Result of passwordEncoder.matches() / comparison: " + matches);
+
+                if (matches) {
+                    user = mapResultSetToUser(rs);
+                    System.out.println("[AUTH DEBUG] Authentication successful!");
+                } else {
+                    System.out.println("[AUTH DEBUG] Exact reason authentication fails: Password mismatch.");
+                }
+            } else {
+                System.out.println("[AUTH DEBUG] User is found: No");
+                System.out.println("[AUTH DEBUG] Exact reason authentication fails: User not found in database for email: " + email);
             }
 
         } catch (Exception e) {
-            System.out.println("Error during login: " + e.getMessage());
+            System.out.println("[AUTH DEBUG] Exception during login query: " + e.getMessage());
+            System.out.println("[AUTH DEBUG] Exact reason authentication fails: Exception encountered during query execution.");
             e.printStackTrace();
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+            throw new RuntimeException("Error during authentication", e);
         }
+        
+        System.out.println("[AUTH DEBUG] JWT generation: Not configured in this project. Authentication flow returns user data directly to AuthContext.");
+        System.out.println("=================================================");
 
         return user;
     }
